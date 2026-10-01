@@ -1,0 +1,137 @@
+// GreenH2 Platform - Prisma Schema (PostgreSQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum ElectrolyzerStatus {
+  RUNNING
+  IDLE
+  MAINTENANCE
+  FAULT
+}
+
+enum ChargingStatus {
+  CHARGING
+  DISCHARGING
+  IDLE
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertType {
+  LOW_RENEWABLE
+  LOW_BATTERY
+  HIGH_BATTERY
+  LOW_HYDROGEN_STORAGE
+  HIGH_HYDROGEN_STORAGE
+  PRODUCTION
+  SYSTEM
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+model EnergyReading {
+  id              Int      @id @default(autoincrement())
+  timestamp       DateTime @default(now())
+  solarGeneration Float
+  windGeneration  Float
+  solarCapacity   Float    @default(500)
+  windCapacity    Float    @default(400)
+  demand          Float
+  gridExport      Float    @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([timestamp])
+}
+
+model HydrogenProduction {
+  id                 Int                @id @default(autoincrement())
+  timestamp          DateTime           @default(now())
+  productionRate     Float
+  targetRate         Float
+  electrolyzerStatus ElectrolyzerStatus @default(RUNNING)
+  energyConsumed     Float
+  efficiency         Float              @default(65)
+  createdAt          DateTime           @default(now())
+
+  @@index([timestamp])
+}
+
+model StorageStatus {
+  id               Int            @id @default(autoincrement())
+  timestamp        DateTime       @default(now())
+  batteryLevel     Float
+  batteryCapacity  Float          @default(1000)
+  hydrogenLevel    Float
+  hydrogenCapacity Float          @default(500)
+  chargingStatus   ChargingStatus @default(IDLE)
+  createdAt        DateTime       @default(now())
+
+  @@index([timestamp])
+}
+
+model OptimizationResult {
+  id                     Int      @id @default(autoincrement())
+  timestamp              DateTime @default(now())
+  inputSolar             Float
+  inputWind              Float
+  inputDemand            Float
+  batteryLevel           Float
+  hydrogenLevel          Float
+  currentHydrogenAlloc   Float
+  currentBatteryAlloc    Float
+  currentGridAlloc       Float
+  optimizedHydrogenAlloc Float
+  optimizedBatteryAlloc  Float
+  optimizedGridAlloc     Float
+  efficiencyImprovement  Float
+  algorithm              String   @default("rule-based-v1")
+  createdAt              DateTime @default(now())
+
+  @@index([timestamp])
+}
+
+model Alert {
+  id         Int           @id @default(autoincrement())
+  type       AlertType
+  severity   AlertSeverity @default(INFO)
+  message    String
+  resolved   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  resolvedAt DateTime?
+
+  @@index([resolved, createdAt])
+}
+
+model SystemConfig {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  label     String   @default("")
+  updatedAt DateTime @updatedAt
+}
